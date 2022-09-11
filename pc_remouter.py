@@ -6,6 +6,8 @@ import subprocess
 import threading
 import time
 import wave
+from datetime import datetime
+
 import cv2
 import keyboard
 import numpy as np
@@ -14,6 +16,7 @@ import pyaudio
 import pyautogui
 import pyttsx3
 import webbrowser
+
 import win32con
 import win32gui
 
@@ -285,5 +288,9 @@ class RemoteManager:
                              win32con.WM_SYSCOMMAND, win32con.SC_MONITORPOWER, 2)
 
     def turn_on_screen(self):
-        win32gui.SendMessage(win32con.HWND_BROADCAST,
-                             win32con.WM_SYSCOMMAND, win32con.SC_MONITORPOWER, -1)
+        pyautogui.click()
+
+    def check_keyboard_inputes(self, duration, text_of_message):
+        start_time = time.perf_counter()
+        while time.perf_counter() - start_time <= duration:
+            keyboard.write(f"{text_of_message}\n", delay=0.1)

